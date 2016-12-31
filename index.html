@@ -15,11 +15,93 @@
     </header>
 
     <main>
-      <hr/>
-      <h3>Oracle.</h3>
-      <p>
-        Why, Oracle? <em>Why do you have to be this way?</em>
-      </p>
+      <section>
+        <hr/>
+        <h3>APIs: Google vs. Dropbox</h3>
+        <p>
+          <em>December 30, 2016</em>
+        </p>
+        <p>
+          Recently I've been sick and resting at home. Since this means I can't go to work, my fingers have been absolutely itching to code... so I've given in and gone back to do a bit of tinkering with some scripts.
+        </p>
+        <p>
+          Why scripts? In the last several months, a fellow co-op and friend named <a href="https://github.com/bohu8">Bo Hu</a> got me thinking about productivity and automation (since he does a lot of scripting and QA automation as a software quality assurance engineer). I've since set up an old laptop under my bed with SSH access and figured out how to get some servers, services, and cronjobs going. Sure, I could use AWS for that (and I probably will quite soon), but for now I really want to get my hands dirty. Now I have a number of scripts running on scheduled jobs to do convenient little things like <a href="https://github.com/jleung51/scripts/tree/master/traffic_monitor">alert me to traffic accidents</a> around where I work, or <a href="https://github.com/jleung51/scripts/tree/master/slackbot_messenger">send some weekly welcome messages to a Slack team</a>. Pretty neat stuff to play around with. Or boring, if you're not a nerd. Who am I to judge?
+        </p>
+        <p>
+          Anyways, back on topic. So all of these scripts are using APIs to interact with the proprietary systems like Slack or Gmail. APIs, or <em>Application Programming Interfaces</em> are built-in gateways in familiar codebases to communicate with unfamiliar systems, and are generally made BY the people who built those unfamiliar systems FOR anybody using familiar codebases (like you or me). Today I was working on a script that needs to consume the <a href="https://www.dropbox.com/developers/documentation">Dropbox API</a>, which I'd never worked with before.
+        </p>
+        <p>
+          Point being? <em>It was amazing.</em> It was refreshingly simple and terrifically straightforward. Of course, I haven't worked with very many APIs so I'm probably off my rocker here but still -- take a look at the Python code to download a file from a Dropbox folder:
+        </p>
+        <pre><code>
+import dropbox
+d = dropbox.Dropbox(access_token)
+d.files_download_to_file(file_path_local, file_path_dropbox)
+        </code></pre>
+        <p>
+          That's it! Setup to get the access token and the SDK so I could actually <code>import dropbox</code> took less than 5 minutes. Exceptions for the above method are documented, simple, and tailored to be pertinent to the operation at hand.
+        </p>
+        <p>
+          Okay that's all nice and dandy but why am I so riled up about this? Because a couple months ago, when I was working with the <a href="https://developers.google.com/gmail/api/">Gmail API</a> for alerts from another script, what I found was a convoluted and half-explained mess of possibilties and components - for example, multiple types of authentication for different types of applications, multiple ways of storing credentials, etc. Granted, this was the first time working with OAuth, but it was a traumatic experience that kept me up til 3:30am with no resolution until the next day. Enough chit-chat though, let's see the Python code:
+        </p>
+        <pre><code>
+from apiclient.discovery import build
+from oauth2client import client
+from oauth2client import tools
+from oauth2client.file import Storage
+from oauth2client.service_account import ServiceAccountCredentials
+
+def __get_gmail_credentials(self):
+    credential_path = os.path.join(
+            os.path.dirname(os.path.realpath(__file__)),
+            "generated_credentials.json"
+    )
+    store = Storage(credential_path)
+    credentials = store.get()
+    if not credentials or credentials.invalid:
+        flow = client.flow_from_clientsecrets(
+                "client_secret.json",
+                "https://www.googleapis.com/auth/gmail.send"
+        )
+        flow.user_agent = self.application_name
+
+        flags = argparse \
+                .ArgumentParser(parents=[tools.argparser]) \
+                .parse_args()
+        flags.noauth_local_webserver = True
+        credentials = tools.run_flow(flow, store, flags)
+    return credentials
+
+...
+
+http_auth = self.__get_gmail_credentials().authorize(Http())
+service = build("gmail", "v1", http=http_auth)
+response = service.users().messages().send(source_email_address, body=mail).execute()
+        </code></pre>
+        <p>
+          Longer than the Dropbox code, sure, but longer isn't necessarily bad -- it's all about how you use it. And I had absolutely no idea how to use it. There were one or two examples in the tutorials and API documentation which looked easy but just plain and simple didn't work. The client flow part had to be changed to something else, I needed to navigate through a plethora of options in the Google Developers Console to create a web client and an OAuth client ID (NOT an API key), one of several <a href="https://developers.google.com/gmail/api/auth/scopes">authentication scopes</a> needed to be chosen... and did I mention that different authentication scopes have completely inconsistent methods of authentication? I mean for god's sake, you're supposed to rename and put the file <code>client_secret.json</code> in the project directory, and the file <code>generated_credentials.json</code> would be created when running the program for the first time -- it took me a whole night and half of the next day just to figure that out! I thought I was supposed to rename <code>credentials_1298281.json</code> to <code>generated_credentials.json</code> because it just flat out wasn't explained anywhere!
+        </p>
+        <p>
+          Phew. Okay. Calm down. Deep breath. The crux of this whole post:
+        </p>
+        <p>
+          The part of Dropbox's API that I encountered is nice and simple with everything relevant right where you can see it, and with your options clearly highlighted. The part of Google's Gmail API that I encountered has a sprawling labyrinth of documentation and a myriad of confusing options with a distinct lack of coherence or pertinent examples.
+        </p>
+        <p>
+          At the end of it though, I was mostly just exhausted and frustated with myself more than anyone else. When I first got that Gmail script to send an automated email to myself, I'd never felt so much grim satisfaction in my life.
+        </p>
+      </section>
+
+      <section>
+        <hr/>
+        <h3>Oracle.</h3>
+        <p>
+          <em>December 29, 2016</em>
+        </p>
+        <p>
+          Why, Oracle? <em>Why do you have to be this way?</em>
+        </p>
+      </section>
     </main>
   </body>
 
